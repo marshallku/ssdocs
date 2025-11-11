@@ -1,6 +1,5 @@
 use anyhow::Result;
 use pulldown_cmark::{html, Options, Parser as MdParser};
-use syntect::easy::HighlightLines;
 use syntect::highlighting::{ThemeSet, Theme};
 use syntect::parsing::SyntaxSet;
 use syntect::html::highlighted_html_for_string;

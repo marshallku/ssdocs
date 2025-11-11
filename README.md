@@ -29,7 +29,21 @@ cargo run -- build --incremental
 cargo run -- build --post content/posts/dev/my-post.md
 ```
 
-### View your site
+### Development with watch mode
+
+Watch mode automatically rebuilds when files change and serves your site:
+
+```bash
+# Start watch mode (default port 8080)
+cargo run -- watch
+
+# Use custom port
+cargo run -- watch --port 3000
+```
+
+Then visit `http://localhost:8080` to view your site. Edit any file in `content/`, `templates/`, or `static/` and it will automatically rebuild!
+
+### View your site (without watch mode)
 
 The generated files are in `dist/`. You can serve them with any static file server:
 
@@ -74,6 +88,7 @@ ssdocs/
 Build all posts in `content/posts/`.
 
 Options:
+
 - `--incremental`, `-i` - Use cache to skip unchanged files
 - `--post <path>`, `-p <path>` - Build only a specific post
 
@@ -86,24 +101,28 @@ ssg new <category> "<title>"
 ```
 
 Example:
+
 ```bash
 ssg new dev "Building a Rust SSG"
 # Creates: content/posts/dev/building-a-rust-ssg.md
 ```
 
-### `ssg watch` (Coming Soon)
+### `ssg watch`
 
-Watch for file changes and automatically rebuild.
+Watch for file changes and automatically rebuild with built-in dev server.
 
-## Documentation
+```bash
+ssg watch [--port <port>]
+```
 
-For detailed documentation, see:
+Options:
 
-- [ARCHITECTURE.md](../rustyblog/ARCHITECTURE.md) - System architecture
-- [IMPLEMENTATION_PLAN.md](../rustyblog/IMPLEMENTATION_PLAN.md) - Build guide
-- [REFERENCE.md](../rustyblog/REFERENCE.md) - CLI and template reference
-- [INDEX_AND_TEMPLATES.md](../rustyblog/INDEX_AND_TEMPLATES.md) - Deep dive on indices and templates
+- `--port <port>`, `-p <port>` - Port for dev server (default: 8080)
 
-## License
+Watches:
 
-Custom software for marshallku blog.
+- `content/` - Markdown posts
+- `templates/` - Tera templates
+- `static/` - CSS, JS, images
+
+The dev server automatically serves your site while watching for changes.

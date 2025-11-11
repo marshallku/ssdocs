@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{% block title %}{{ config.site_title }}{% endblock %}</title>
+
+    {% block meta %}
+    <meta name="description" content="{% block description %}{{ config.author }}'s blog{% endblock %}">
+    <meta name="author" content="{{ config.author }}">
+    {% endblock %}
+
+    <link rel="stylesheet" href="/css/main.css">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <header class="site-header">
+        <div class="container">
+            <h1 class="site-title"><a href="/">{{ config.site_title }}</a></h1>
+            <nav class="site-nav">
+                <a href="/dev">Dev</a>
+                <a href="/chat">Chat</a>
+                <a href="/gallery">Gallery</a>
+                <a href="/notice">Notice</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="site-main">
+        <div class="container">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <footer class="site-footer">
+        <div class="container">
+            <p>&copy; 2025 {{ config.author }}</p>
+        </div>
+    </footer>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

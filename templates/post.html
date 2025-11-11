@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}{{ post.title }} - {{ config.site_title }}{% endblock %}
+
+{% block description %}{{ post.description | default(value="") }}{% endblock %}
+
+{% block meta %}
+    {{ super() }}
+    <meta property="og:title" content="{{ post.title }}">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="{{ config.site_url }}/{{ post.category }}/{{ post.slug }}">
+    {% if post.featured_image %}
+    <meta property="og:image" content="{{ config.site_url }}{{ post.featured_image }}">
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<article class="post">
+    <header class="post-header">
+        {% if post.featured_image %}
+        <img src="{{ post.featured_image }}" alt="{{ post.title }}" class="featured-image">
+        {% endif %}
+
+        <h1 class="post-title">{{ post.title }}</h1>
+
+        <div class="post-meta">
+            <time datetime="{{ post.date }}" class="post-date">
+                {{ post.date | date(format="%B %d, %Y") }}
+            </time>
+            <span class="post-category">
+                <a href="/{{ post.category }}">{{ post.category }}</a>
+            </span>
+        </div>
+
+        {% if post.tags %}
+        <div class="post-tags">
+            {% for tag in post.tags %}
+                <a href="/tag/{{ tag }}" class="tag">{{ tag }}</a>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </header>
+
+    <div class="post-content">
+        {{ content | safe }}
+    </div>
+</article>
+{% endblock %}

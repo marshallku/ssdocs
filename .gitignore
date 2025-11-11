@@ -1,1 +1,17 @@
+# Rust
 /target
+Cargo.lock
+
+# Build output
+/dist
+/.build-cache
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

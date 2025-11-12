@@ -19,10 +19,14 @@
         <div class="container">
             <h1 class="site-title"><a href="/">{{ config.site_title }}</a></h1>
             <nav class="site-nav">
-                <a href="/dev">Dev</a>
-                <a href="/chat">Chat</a>
-                <a href="/gallery">Gallery</a>
-                <a href="/notice">Notice</a>
+                {% if categories %}
+                    {% for category in categories %}
+                    <a href="/{{ category.slug }}"
+                       {% if category.color %}style="color: {{ category.color }}"{% endif %}>
+                        {{ category.name }}
+                    </a>
+                    {% endfor %}
+                {% endif %}
             </nav>
         </div>
     </header>

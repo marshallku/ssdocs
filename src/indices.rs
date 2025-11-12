@@ -26,9 +26,10 @@ impl IndexGenerator {
         // Generate homepage
         self.generate_homepage(metadata)?;
 
-        // Generate category pages
-        for category in metadata.get_categories() {
-            self.generate_category_page(&category, metadata)?;
+        // Generate category pages (from discovered categories, including hidden)
+        let category_count = metadata.get_category_info().len();
+        for category in metadata.get_category_info() {
+            self.generate_category_page(category, metadata)?;
         }
 
         // Generate tag pages
@@ -40,7 +41,7 @@ impl IndexGenerator {
         self.generate_tags_overview(metadata)?;
 
         println!("   ✓ Homepage");
-        println!("   ✓ {} category pages", metadata.get_categories().len());
+        println!("   ✓ {} category pages", category_count);
         println!("   ✓ {} tag pages", metadata.get_tags().len());
 
         Ok(())
@@ -50,8 +51,16 @@ impl IndexGenerator {
     fn generate_homepage(&self, metadata: &MetadataCache) -> Result<()> {
         let recent_posts = metadata.get_recent_posts(10);
 
+        // Get visible categories for navigation
+        let visible_categories: Vec<_> = metadata
+            .get_category_info()
+            .iter()
+            .filter(|c| !c.hidden)
+            .collect();
+
         let mut context = TeraContext::new();
         context.insert("posts", &recent_posts);
+        context.insert("categories", &visible_categories);
         context.insert("config", &self.config);
 
         let output = self.tera.render("index.html", &context)?;
@@ -63,23 +72,35 @@ impl IndexGenerator {
     }
 
     /// Generate category page
-    fn generate_category_page(&self, category: &str, metadata: &MetadataCache) -> Result<()> {
-        let mut posts = metadata.get_posts_by_category(category);
+    fn generate_category_page(
+        &self,
+        category_info: &crate::types::Category,
+        metadata: &MetadataCache,
+    ) -> Result<()> {
+        let mut posts = metadata.get_posts_by_category(&category_info.slug);
 
         // Sort by date, descending
         posts.sort_by(|a, b| b.frontmatter.date.cmp(&a.frontmatter.date));
 
-        let post_count = metadata.categories.get(category).unwrap_or(&0);
+        let post_count = metadata.categories.get(&category_info.slug).unwrap_or(&0);
+
+        // Get visible categories for navigation
+        let visible_categories: Vec<_> = metadata
+            .get_category_info()
+            .iter()
+            .filter(|c| !c.hidden)
+            .collect();
 
         let mut context = TeraContext::new();
-        context.insert("category", category);
+        context.insert("category", category_info);
         context.insert("posts", &posts);
         context.insert("post_count", post_count);
+        context.insert("categories", &visible_categories);
         context.insert("config", &self.config);
 
         let output = self.tera.render("category.html", &context)?;
         let output_path = PathBuf::from(&self.config.output_dir)
-            .join(category)
+            .join(&category_info.slug)
             .join("index.html");
 
         fs::create_dir_all(output_path.parent().unwrap())?;
@@ -97,10 +118,18 @@ impl IndexGenerator {
 
         let post_count = metadata.tags.get(tag).unwrap_or(&0);
 
+        // Get visible categories for navigation
+        let visible_categories: Vec<_> = metadata
+            .get_category_info()
+            .iter()
+            .filter(|c| !c.hidden)
+            .collect();
+
         let mut context = TeraContext::new();
         context.insert("tag", tag);
         context.insert("posts", &posts);
         context.insert("post_count", post_count);
+        context.insert("categories", &visible_categories);
         context.insert("config", &self.config);
 
         let output = self.tera.render("tag.html", &context)?;
@@ -120,8 +149,16 @@ impl IndexGenerator {
         let mut tags_with_counts: Vec<_> = metadata.tags.iter().collect();
         tags_with_counts.sort_by(|a, b| b.1.cmp(a.1)); // Sort by count, descending
 
+        // Get visible categories for navigation
+        let visible_categories: Vec<_> = metadata
+            .get_category_info()
+            .iter()
+            .filter(|c| !c.hidden)
+            .collect();
+
         let mut context = TeraContext::new();
         context.insert("tags", &tags_with_counts);
+        context.insert("categories", &visible_categories);
         context.insert("config", &self.config);
 
         let output = self.tera.render("tags.html", &context)?;

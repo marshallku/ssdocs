@@ -1,4 +1,4 @@
-use crate::types::Frontmatter;
+use crate::types::{Category, Frontmatter};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -18,6 +18,8 @@ pub struct MetadataCache {
     pub posts: Vec<PostMetadata>,
     pub categories: HashMap<String, usize>,
     pub tags: HashMap<String, usize>,
+    #[serde(default)]
+    pub category_info: Vec<Category>,
 }
 
 impl MetadataCache {
@@ -40,7 +42,18 @@ impl MetadataCache {
             posts: Vec::new(),
             categories: HashMap::new(),
             tags: HashMap::new(),
+            category_info: Vec::new(),
         }
+    }
+
+    /// Set category information
+    pub fn set_category_info(&mut self, categories: Vec<Category>) {
+        self.category_info = categories;
+    }
+
+    /// Get category information
+    pub fn get_category_info(&self) -> &[Category] {
+        &self.category_info
     }
 
     /// Add or update a post in the metadata cache

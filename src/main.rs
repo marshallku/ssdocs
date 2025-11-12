@@ -5,6 +5,7 @@ mod generator;
 mod cache;
 mod metadata;
 mod indices;
+mod category;
 
 use anyhow::Result;
 use clap::{Parser as ClapParser, Subcommand};
@@ -12,6 +13,7 @@ use std::path::Path;
 use walkdir::WalkDir;
 
 use crate::cache::{BuildCache, hash_file};
+use crate::category::{discover_categories, validate_category};
 use crate::generator::Generator;
 use crate::indices::IndexGenerator;
 use crate::metadata::MetadataCache;
@@ -109,6 +111,15 @@ fn build_all(use_cache: bool) -> Result<()> {
             config.content_dir
         );
     }
+
+    // Discover categories
+    let categories = discover_categories(posts_dir)?;
+    if categories.is_empty() {
+        eprintln!("⚠️  Warning: No categories found in content directory");
+        eprintln!("   Create a category by adding a subdirectory with markdown files:");
+        eprintln!("   mkdir -p {}/dev", config.content_dir);
+    }
+    metadata.set_category_info(categories);
 
     let mut built_count = 0;
     let mut skipped_count = 0;
@@ -218,14 +229,43 @@ fn build_single_post(post_path: &str) -> Result<()> {
 }
 
 fn create_new_post(category: &str, title: &str) -> Result<()> {
+    let config = Config::default();
+    let posts_dir = Path::new(&config.content_dir);
+
+    // Discover categories
+    let categories = discover_categories(posts_dir)?;
+
     // Validate category
-    let valid_categories = ["dev", "chat", "gallery", "notice"];
-    if !valid_categories.contains(&category) {
-        anyhow::bail!(
-            "Invalid category '{}'. Must be one of: {}",
-            category,
-            valid_categories.join(", ")
-        );
+    if !validate_category(category, &categories) {
+        println!("⚠️  Category '{}' doesn't exist yet.", category);
+        println!();
+
+        if categories.is_empty() {
+            println!("No categories found. To create one:");
+            println!("  1. Create a directory: mkdir -p {}/{}", config.content_dir, category);
+            println!("  2. Optionally add metadata: echo 'name: {}' > {}/{}/.category.yaml",
+                category.chars().next().unwrap().to_uppercase().chain(category.chars().skip(1)).collect::<String>(),
+                config.content_dir, category);
+            println!("  3. Run this command again");
+        } else {
+            let category_list: Vec<String> = categories
+                .iter()
+                .map(|c| format!("  - {} ({})", c.slug, c.name))
+                .collect();
+
+            println!("Available categories:");
+            for cat in category_list {
+                println!("{}", cat);
+            }
+            println!();
+            println!("To create a new category:");
+            println!("  1. Create a directory: mkdir -p {}/{}", config.content_dir, category);
+            println!("  2. Optionally add metadata: echo 'name: Your Name' > {}/{}/.category.yaml", config.content_dir, category);
+            println!("  3. Add at least one post to the category");
+            println!("  4. Run this command again");
+        }
+
+        std::process::exit(0);
     }
 
     // Generate slug from title

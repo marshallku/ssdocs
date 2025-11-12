@@ -1,11 +1,14 @@
 {% extends "base.html" %}
 
-{% block title %}{{ category | title }} - {{ config.site_title }}{% endblock %}
+{% block title %}{{ category.name }} - {{ config.site_title }}{% endblock %}
 
 {% block content %}
 <div class="category-page">
-    <header class="page-header">
-        <h1>{{ category | title }}</h1>
+    <header class="page-header"{% if category.color %} style="border-color: {{ category.color }}"{% endif %}>
+        <h1{% if category.color %} style="color: {{ category.color }}"{% endif %}>{{ category.name }}</h1>
+        {% if category.description %}
+        <p class="category-description">{{ category.description }}</p>
+        {% endif %}
         <p class="post-count">{{ post_count }} posts</p>
     </header>
 

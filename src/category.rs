@@ -8,9 +8,12 @@ use crate::types::Category;
 pub fn discover_categories(content_dir: &Path) -> Result<Vec<Category>> {
     let mut categories = Vec::new();
 
-    for entry in fs::read_dir(content_dir)
-        .with_context(|| format!("Failed to read content directory: {}", content_dir.display()))?
-    {
+    for entry in fs::read_dir(content_dir).with_context(|| {
+        format!(
+            "Failed to read content directory: {}",
+            content_dir.display()
+        )
+    })? {
         let entry = entry?;
         let path = entry.path();
 
@@ -55,12 +58,8 @@ fn load_category_metadata(dir: &Path, slug: &str) -> Result<Category> {
                 metadata_path.display()
             )
         })?;
-        serde_yaml::from_str::<Category>(&content).with_context(|| {
-            format!(
-                "Failed to parse .category.yaml in '{}'",
-                dir.display()
-            )
-        })?
+        serde_yaml::from_str::<Category>(&content)
+            .with_context(|| format!("Failed to parse .category.yaml in '{}'", dir.display()))?
     } else {
         // Default category
         Category {
@@ -119,13 +118,9 @@ pub fn validate_category(slug: &str, categories: &[Category]) -> bool {
 }
 
 /// Get a category by its slug
+#[allow(dead_code)]
 pub fn get_category_by_slug<'a>(slug: &str, categories: &'a [Category]) -> Option<&'a Category> {
     categories.iter().find(|c| c.slug == slug)
-}
-
-/// Get all visible categories (not hidden)
-pub fn get_visible_categories(categories: &[Category]) -> Vec<&Category> {
-    categories.iter().filter(|c| !c.hidden).collect()
 }
 
 #[cfg(test)]
@@ -230,36 +225,6 @@ index: 0
         assert!(validate_category("dev", &categories));
         assert!(validate_category("blog", &categories));
         assert!(!validate_category("invalid", &categories));
-    }
-
-    #[test]
-    fn test_get_visible_categories() {
-        let categories = vec![
-            Category {
-                slug: "dev".to_string(),
-                name: "Development".to_string(),
-                description: String::new(),
-                index: 0,
-                hidden: false,
-                icon: None,
-                color: None,
-                cover_image: None,
-            },
-            Category {
-                slug: "drafts".to_string(),
-                name: "Drafts".to_string(),
-                description: String::new(),
-                index: 1,
-                hidden: true,
-                icon: None,
-                color: None,
-                cover_image: None,
-            },
-        ];
-
-        let visible = get_visible_categories(&categories);
-        assert_eq!(visible.len(), 1);
-        assert_eq!(visible[0].slug, "dev");
     }
 
     #[test]

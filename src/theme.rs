@@ -39,12 +39,8 @@ pub struct ThemeHook {
 #[derive(Debug, Clone)]
 pub struct ThemeEngine {
     pub active_theme: ThemeMetadata,
-    pub parent_theme: Option<ThemeMetadata>,
     pub template_paths: Vec<PathBuf>,
     pub variables: HashMap<String, serde_yaml::Value>,
-    pub theme_dir: PathBuf,
-    pub theme_name: String,  // Directory name of active theme
-    pub parent_theme_name: Option<String>,  // Directory name of parent theme
 }
 
 impl ThemeEngine {
@@ -72,12 +68,8 @@ impl ThemeEngine {
 
         Ok(Self {
             active_theme,
-            parent_theme,
             template_paths,
             variables,
-            theme_dir,
-            theme_name,
-            parent_theme_name,
         })
     }
 

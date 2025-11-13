@@ -6,6 +6,8 @@ mod cache;
 mod metadata;
 mod indices;
 mod category;
+mod config;
+mod theme;
 
 use anyhow::Result;
 use clap::{Parser as ClapParser, Subcommand};
@@ -14,12 +16,12 @@ use walkdir::WalkDir;
 
 use crate::cache::{BuildCache, hash_file};
 use crate::category::{discover_categories, validate_category};
+use crate::config::load_config;
 use crate::generator::Generator;
 use crate::indices::IndexGenerator;
 use crate::metadata::MetadataCache;
 use crate::parser::Parser;
 use crate::renderer::Renderer;
-use crate::types::Config;
 
 #[derive(ClapParser)]
 #[command(name = "ssg")]
@@ -88,7 +90,7 @@ fn main() -> Result<()> {
 fn build_all(use_cache: bool) -> Result<()> {
     println!("Building site...\n");
 
-    let config = Config::default();
+    let config = load_config()?;
     let renderer = Renderer::new();
     let generator = Generator::new(config.clone())?;
     let mut cache = if use_cache {
@@ -102,13 +104,13 @@ fn build_all(use_cache: bool) -> Result<()> {
         MetadataCache::new()
     };
 
-    let posts_dir = Path::new(&config.content_dir);
+    let posts_dir = Path::new(&config.build.content_dir);
 
     if !posts_dir.exists() {
         anyhow::bail!(
             "Content directory '{}' does not exist. Create it first with: mkdir -p {}",
-            config.content_dir,
-            config.content_dir
+            config.build.content_dir,
+            config.build.content_dir
         );
     }
 
@@ -117,7 +119,7 @@ fn build_all(use_cache: bool) -> Result<()> {
     if categories.is_empty() {
         eprintln!("⚠️  Warning: No categories found in content directory");
         eprintln!("   Create a category by adding a subdirectory with markdown files:");
-        eprintln!("   mkdir -p {}/dev", config.content_dir);
+        eprintln!("   mkdir -p {}/dev", config.build.content_dir);
     }
     metadata.set_category_info(categories);
 
@@ -199,9 +201,9 @@ fn build_all(use_cache: bool) -> Result<()> {
 fn build_single_post(post_path: &str) -> Result<()> {
     println!("Building single post: {}\n", post_path);
 
-    let config = Config::default();
+    let config = load_config()?;
     let renderer = Renderer::new();
-    let generator = Generator::new(config.clone())?;
+    let generator = Generator::new(config)?;
 
     let path = Path::new(post_path);
 
@@ -229,8 +231,8 @@ fn build_single_post(post_path: &str) -> Result<()> {
 }
 
 fn create_new_post(category: &str, title: &str) -> Result<()> {
-    let config = Config::default();
-    let posts_dir = Path::new(&config.content_dir);
+    let config = load_config()?;
+    let posts_dir = Path::new(&config.build.content_dir);
 
     // Discover categories
     let categories = discover_categories(posts_dir)?;
@@ -242,10 +244,10 @@ fn create_new_post(category: &str, title: &str) -> Result<()> {
 
         if categories.is_empty() {
             println!("No categories found. To create one:");
-            println!("  1. Create a directory: mkdir -p {}/{}", config.content_dir, category);
+            println!("  1. Create a directory: mkdir -p {}/{}", config.build.content_dir, category);
             println!("  2. Optionally add metadata: echo 'name: {}' > {}/{}/.category.yaml",
                 category.chars().next().unwrap().to_uppercase().chain(category.chars().skip(1)).collect::<String>(),
-                config.content_dir, category);
+                config.build.content_dir, category);
             println!("  3. Run this command again");
         } else {
             let category_list: Vec<String> = categories
@@ -259,8 +261,8 @@ fn create_new_post(category: &str, title: &str) -> Result<()> {
             }
             println!();
             println!("To create a new category:");
-            println!("  1. Create a directory: mkdir -p {}/{}", config.content_dir, category);
-            println!("  2. Optionally add metadata: echo 'name: Your Name' > {}/{}/.category.yaml", config.content_dir, category);
+            println!("  1. Create a directory: mkdir -p {}/{}", config.build.content_dir, category);
+            println!("  2. Optionally add metadata: echo 'name: Your Name' > {}/{}/.category.yaml", config.build.content_dir, category);
             println!("  3. Add at least one post to the category");
             println!("  4. Run this command again");
         }
@@ -322,7 +324,7 @@ fn watch_mode(port: u16) -> Result<()> {
     println!("🔍 Watch mode starting...");
     println!("   Watching for changes in:");
     println!("   - content/");
-    println!("   - templates/");
+    println!("   - themes/");
     println!("   - static/");
     println!("\n   Serving on http://localhost:{}", port);
     println!("   Press Ctrl+C to stop\n");
@@ -350,7 +352,7 @@ fn watch_mode(port: u16) -> Result<()> {
 
     // Watch directories
     watcher.watch(Path::new("content"), RecursiveMode::Recursive)?;
-    watcher.watch(Path::new("templates"), RecursiveMode::Recursive)?;
+    watcher.watch(Path::new("themes"), RecursiveMode::Recursive)?;
     watcher.watch(Path::new("static"), RecursiveMode::Recursive)?;
 
     // Process file change events

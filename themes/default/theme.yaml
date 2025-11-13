@@ -1,0 +1,59 @@
+name: "Default Theme"
+version: "1.0.0"
+author: "Marshall K"
+description: "Clean, minimal blog theme for ssdocs"
+
+# No parent theme - this is the base
+parent: null
+
+# Theme variables (can be overridden in config.yaml)
+variables:
+  # Colors
+  primary_color: "#3498db"
+  accent_color: "#e74c3c"
+  text_color: "#333333"
+  background_color: "#ffffff"
+  link_color: "#2980b9"
+
+  # Typography
+  font_family: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+  heading_font: "inherit"
+  code_font: "'Fira Code', 'Courier New', monospace"
+
+  # Syntax highlighting theme
+  code_theme: "base16-ocean.dark"
+
+  # Layout
+  max_width: "1200px"
+  content_width: "800px"
+  sidebar_width: "300px"
+
+  # Spacing
+  spacing_unit: "1rem"
+  section_spacing: "3rem"
+
+# Template hooks
+hooks:
+  - name: "head_extra"
+    block: "extra_head"
+  - name: "header_nav"
+    block: "header_nav"
+  - name: "before_content"
+    block: "before_content"
+  - name: "after_content"
+    block: "after_content"
+  - name: "comments"
+    block: "comments"
+  - name: "footer_extra"
+    block: "footer_extra"
+  - name: "scripts_extra"
+    block: "extra_js"
+
+# Required templates for validation
+required_templates:
+  - base.html
+  - post.html
+  - index.html
+  - category.html
+  - tag.html
+  - tags.html

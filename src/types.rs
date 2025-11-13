@@ -23,31 +23,6 @@ pub struct Post {
     pub rendered_html: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize)]
-pub struct Config {
-    pub site_title: String,
-    pub site_url: String,
-    pub author: String,
-    pub content_dir: String,
-    pub template_dir: String,
-    pub output_dir: String,
-    pub posts_per_page: usize,
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            site_title: "marshallku blog".to_string(),
-            site_url: "https://marshallku.com".to_string(),
-            author: "Marshall K".to_string(),
-            content_dir: "content/posts".to_string(),
-            template_dir: "templates".to_string(),
-            output_dir: "dist".to_string(),
-            posts_per_page: 10,
-        }
-    }
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Category {
     /// URL slug (same as directory name)

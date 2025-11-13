@@ -1,0 +1,35 @@
+# ssdocs Configuration File
+# This file controls site settings, theme selection, and build configuration
+
+# Site metadata
+site:
+  title: "Marshall Ku's blog"
+  url: "https://marshallku.com"
+  author: "Marshall K"
+
+# Theme configuration
+theme:
+  # Theme name (directory name in themes/)
+  name: "default"
+
+  # Optional: custom theme directory path
+  # custom_dir: "/path/to/custom/theme"
+
+  # Override theme variables
+  variables:
+    # Uncomment to customize theme colors and settings
+    # primary_color: "#3498db"
+    # accent_color: "#e74c3c"
+    # font_family: "Inter, sans-serif"
+    # code_theme: "base16-ocean.dark"
+
+# Build configuration
+build:
+  # Content directory (where markdown posts are stored)
+  content_dir: "content/posts"
+
+  # Output directory (where generated HTML goes)
+  output_dir: "dist"
+
+  # Number of posts per page (for pagination, when implemented)
+  posts_per_page: 10

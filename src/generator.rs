@@ -1,21 +1,41 @@
-use crate::types::{Config, Post};
+use crate::config::SsgConfig;
+use crate::theme::ThemeEngine;
+use crate::types::Post;
 use anyhow::{Context, Result};
+use serde::Serialize;
+use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use tera::{Context as TeraContext, Tera};
 
+/// Flattened config for template context (backward compatibility)
+#[derive(Debug, Clone, Serialize)]
+struct TemplateConfig<'a> {
+    site_title: &'a str,
+    site_url: &'a str,
+    author: &'a str,
+}
+
 pub struct Generator {
     tera: Tera,
-    config: Config,
+    config: SsgConfig,
+    theme_variables: HashMap<String, serde_yaml::Value>,
+    theme_info: HashMap<String, String>,
 }
 
 impl Generator {
-    pub fn new(config: Config) -> Result<Self> {
-        let template_glob = format!("{}/**/*.html", config.template_dir);
-        let tera = Tera::new(&template_glob)
-            .context("Failed to load templates")?;
+    pub fn new(config: SsgConfig) -> Result<Self> {
+        let theme_engine = ThemeEngine::new(&config)?;
+        let tera = theme_engine.create_tera_engine()?;
+        let theme_variables = theme_engine.get_template_variables();
+        let theme_info = theme_engine.get_theme_info();
 
-        Ok(Self { tera, config })
+        Ok(Self {
+            tera,
+            config,
+            theme_variables,
+            theme_info,
+        })
     }
 
     /// Generate a single post page
@@ -23,11 +43,21 @@ impl Generator {
         let html = post.rendered_html.as_ref()
             .ok_or_else(|| anyhow::anyhow!("Post not rendered: {}", post.slug))?;
 
+        let template_config = TemplateConfig {
+            site_title: &self.config.site.title,
+            site_url: &self.config.site.url,
+            author: &self.config.site.author,
+        };
+
         let mut context = TeraContext::new();
         context.insert("post", &post.frontmatter);
         context.insert("slug", &post.slug);
         context.insert("content", html);
-        context.insert("config", &self.config);
+        context.insert("config", &template_config);
+
+        // Add theme context
+        context.insert("theme_variables", &self.theme_variables);
+        context.insert("theme_info", &self.theme_info);
 
         let output = self.tera.render("post.html", &context)?;
 
@@ -41,7 +71,7 @@ impl Generator {
 
     /// Get the output path for a post
     fn get_post_path(&self, post: &Post) -> PathBuf {
-        PathBuf::from(&self.config.output_dir)
+        PathBuf::from(&self.config.build.output_dir)
             .join(&post.frontmatter.category)
             .join(&post.slug)
             .join("index.html")
@@ -50,7 +80,7 @@ impl Generator {
     /// Copy static assets from static/ to dist/
     pub fn copy_static_assets(&self) -> Result<()> {
         let src = Path::new("static");
-        let dst = Path::new(&self.config.output_dir);
+        let dst = Path::new(&self.config.build.output_dir);
 
         if !src.exists() {
             println!("No static/ directory found, skipping asset copy");

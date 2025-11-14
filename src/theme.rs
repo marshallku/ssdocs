@@ -140,7 +140,7 @@ fn load_theme_metadata(theme_dir: &Path, theme_name: &str) -> Result<ThemeMetada
 
     if !theme_path.exists() {
         if theme_name == "default" && Path::new("templates").exists() {
-            return create_legacy_theme_metadata();
+            return get_default_theme_metadata();
         }
         anyhow::bail!(
             "Theme '{}' not found at {:?}. Available themes should be in the {} directory.",
@@ -171,8 +171,7 @@ fn load_theme_metadata(theme_dir: &Path, theme_name: &str) -> Result<ThemeMetada
     Ok(metadata)
 }
 
-/// Create legacy theme metadata for backward compatibility with templates/ directory
-fn create_legacy_theme_metadata() -> Result<ThemeMetadata> {
+fn get_default_theme_metadata() -> Result<ThemeMetadata> {
     Ok(ThemeMetadata {
         name: "default".to_string(),
         version: "1.0.0".to_string(),
@@ -189,8 +188,6 @@ fn create_legacy_theme_metadata() -> Result<ThemeMetadata> {
     })
 }
 
-/// Resolve template paths with inheritance chain
-/// Returns paths in priority order: child theme, parent theme
 fn resolve_template_paths(
     theme_dir: &Path,
     theme_name: &str,
@@ -220,8 +217,6 @@ fn resolve_template_paths(
     Ok(paths)
 }
 
-/// Resolve static asset paths with inheritance chain
-/// Returns paths in priority order: parent theme, child theme (parent copied first, child overwrites)
 fn resolve_static_paths(
     theme_dir: &Path,
     theme_name: &str,
@@ -244,7 +239,6 @@ fn resolve_static_paths(
     paths
 }
 
-/// Merge theme variables from parent → child → site config
 fn merge_variables(
     active_theme: &ThemeMetadata,
     parent_theme: &Option<ThemeMetadata>,
@@ -269,7 +263,6 @@ fn merge_variables(
     variables
 }
 
-/// Validate that all required templates exist in Tera
 fn validate_required_templates(tera: &Tera, theme: &ThemeMetadata) -> Result<()> {
     let missing_templates: Vec<&String> = theme
         .required_templates

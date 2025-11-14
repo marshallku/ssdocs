@@ -17,7 +17,6 @@ impl Renderer {
         }
     }
 
-    /// Render markdown to HTML
     pub fn render_markdown(&self, markdown: &str) -> String {
         let options = Options::all();
         let parser = MdParser::new_ext(markdown, options);

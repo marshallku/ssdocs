@@ -4,14 +4,12 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 
-/// Lightweight post metadata for index generation
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PostMetadata {
     pub slug: String,
     pub frontmatter: Frontmatter,
 }
 
-/// Metadata cache for efficient index generation
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MetadataCache {
     pub version: String,

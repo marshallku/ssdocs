@@ -40,7 +40,6 @@ impl Generator {
         })
     }
 
-    /// Generate a single post page
     pub fn generate_post(&self, post: &Post) -> Result<PathBuf> {
         let html = post
             .rendered_html
@@ -79,7 +78,6 @@ impl Generator {
             .join("index.html")
     }
 
-    /// Copy static assets from theme and static/ to dist/
     pub fn copy_static_assets(&self) -> Result<()> {
         let dst = Path::new(&self.config.build.output_dir);
 

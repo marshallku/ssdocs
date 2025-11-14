@@ -6,7 +6,6 @@ use std::path::Path;
 pub struct Parser;
 
 impl Parser {
-    /// Parse a markdown file and extract frontmatter + content
     pub fn parse_file(path: &Path) -> Result<Post> {
         let content = fs::read_to_string(path)
             .with_context(|| format!("Failed to read {}", path.display()))?;

@@ -1,6 +1,7 @@
 mod cache;
 mod category;
 mod config;
+mod feeds;
 mod generator;
 mod indices;
 mod metadata;
@@ -17,6 +18,7 @@ use walkdir::WalkDir;
 use crate::cache::{hash_file, BuildCache};
 use crate::category::{discover_categories, validate_category};
 use crate::config::load_config;
+use crate::feeds::FeedGenerator;
 use crate::generator::Generator;
 use crate::indices::IndexGenerator;
 use crate::metadata::MetadataCache;
@@ -173,6 +175,14 @@ fn build_all(use_cache: bool) -> Result<()> {
 
     let index_generator = IndexGenerator::new(config.clone())?;
     index_generator.generate_all(&metadata)?;
+
+    println!("📄 Generating RSS feed...");
+    FeedGenerator::generate_rss(
+        &config,
+        &metadata,
+        posts_dir,
+        Path::new(&config.build.output_dir),
+    )?;
 
     generator.copy_static_assets()?;
 

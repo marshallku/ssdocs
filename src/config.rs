@@ -13,6 +13,8 @@ pub struct SiteConfig {
     pub url: String,
     #[serde(default = "default_author")]
     pub author: String,
+    #[serde(default = "default_description")]
+    pub description: String,
 }
 
 /// Theme configuration from config.yaml
@@ -54,6 +56,7 @@ impl Default for SiteConfig {
             title: default_site_title(),
             url: default_site_url(),
             author: default_author(),
+            description: default_description(),
         }
     }
 }
@@ -98,6 +101,10 @@ fn default_site_url() -> String {
 
 fn default_author() -> String {
     "Marshall K".to_string()
+}
+
+fn default_description() -> String {
+    "marshallku blog".to_string()
 }
 
 fn default_theme_name() -> String {

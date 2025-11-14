@@ -51,7 +51,11 @@
     "webdev",
     "cmark",
     "syntect",
-    "roboto"
+    "roboto",
+    "miniserve",
+    "frontmatter",
+    "splitn",
+    "segoe"
   ],
   "ignorePaths": ["Cargo.lock", "Cargo.toml", "target", "content", "examples"]
 }

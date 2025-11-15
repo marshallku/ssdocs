@@ -9,7 +9,7 @@ path = "src/main.rs"
 
 [dependencies]
 # CLI
-clap = { version = "4.4", features = ["derive"] }
+clap = { version = "4.5", features = ["derive"] }
 
 # Markdown parsing
 pulldown-cmark = "0.9"
@@ -20,21 +20,21 @@ serde_json = "1.0"
 serde_yaml = "0.9"
 
 # Templating
-tera = "1.19"
+tera = "1.20"
 
 # Syntax highlighting
-syntect = "5.0"
+syntect = "5.3"
 
 # Utilities
 anyhow = "1.0"
 chrono = { version = "0.4", features = ["serde"] }
-walkdir = "2.4"
+walkdir = "2.5"
 
 # Hashing (for cache)
-blake3 = "1.5"
+blake3 = "1.8"
 
 # File watching (for watch mode)
 notify = "6.1"
 
 [dev-dependencies]
-tempfile = "3.8"
+tempfile = "3.23"

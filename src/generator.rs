@@ -95,6 +95,62 @@ impl Generator {
         Ok(())
     }
 
+    pub fn copy_content_assets(&self) -> Result<()> {
+        let content_dir = Path::new(&self.config.build.content_dir);
+        let output_dir = Path::new(&self.config.build.output_dir);
+
+        if !content_dir.exists() {
+            return Ok(());
+        }
+
+        let mut copied_count = 0;
+
+        for entry in walkdir::WalkDir::new(content_dir)
+            .into_iter()
+            .filter_map(|e| e.ok())
+        {
+            let path = entry.path();
+
+            if !path.is_file() {
+                continue;
+            }
+
+            if let Some(ext) = path.extension() {
+                let ext_str = ext.to_string_lossy().to_lowercase();
+                if ext_str == "md" {
+                    continue;
+                }
+
+                let is_image = matches!(
+                    ext_str.as_str(),
+                    "png" | "jpg" | "jpeg" | "gif" | "webp" | "svg" | "ico" | "bmp"
+                );
+
+                let is_media = matches!(ext_str.as_str(), "mp4" | "webm" | "mp3" | "wav");
+
+                let is_document = matches!(ext_str.as_str(), "pdf" | "zip" | "tar" | "gz");
+
+                if is_image || is_media || is_document {
+                    let relative_path = path.strip_prefix(content_dir)?;
+                    let full_output_path = output_dir.join(relative_path);
+
+                    if let Some(parent) = full_output_path.parent() {
+                        fs::create_dir_all(parent)?;
+                    }
+
+                    fs::copy(path, &full_output_path)?;
+                    copied_count += 1;
+                }
+            }
+        }
+
+        if copied_count > 0 {
+            println!("📦 Copied {} asset(s) from content directory", copied_count);
+        }
+
+        Ok(())
+    }
+
     fn copy_dir_all(src: &Path, dst: &Path) -> Result<()> {
         fs::create_dir_all(dst)?;
 

@@ -29,6 +29,8 @@ With RustyBlog:
 - **Incremental publishing** - add one post, rebuild in <1 second
 - **Full control** over the entire pipeline
 
+![Example Image](./test-image.png)
+
 ## Features
 
 ### Markdown Support
@@ -36,7 +38,7 @@ With RustyBlog:
 All standard markdown features work:
 
 - **Bold text**
-- *Italic text*
+- _Italic text_
 - `inline code`
 - [Links](https://rust-lang.org)
 
@@ -50,18 +52,20 @@ fn main() {
 
 ```javascript
 function greet() {
-    console.log("JavaScript works too!");
+  console.log("JavaScript works too!");
 }
 ```
 
 ### Lists
 
 Unordered:
+
 - First item
 - Second item
 - Third item
 
 Ordered:
+
 1. Step one
 2. Step two
 3. Step three

@@ -184,6 +184,7 @@ fn build_all(use_cache: bool) -> Result<()> {
         Path::new(&config.build.output_dir),
     )?;
 
+    generator.copy_content_assets()?;
     generator.copy_static_assets()?;
 
     println!("\n✅ Build complete!");

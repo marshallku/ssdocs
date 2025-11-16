@@ -1,4 +1,4 @@
-use crate::types::{Frontmatter, Post};
+use crate::types::{Frontmatter, Page, PageFrontmatter, Post};
 use anyhow::{Context, Result};
 use std::fs;
 use std::path::Path;
@@ -22,6 +22,36 @@ impl Parser {
         })
     }
 
+    pub fn parse_page_file(path: &Path) -> Result<Page> {
+        let content = fs::read_to_string(path)
+            .with_context(|| format!("Failed to read {}", path.display()))?;
+
+        let slug = Self::path_to_slug(path)?;
+
+        if content.trim_start().starts_with("---") {
+            let (frontmatter_str, markdown) = Self::split_frontmatter(&content)?;
+            let frontmatter = Self::parse_page_frontmatter(frontmatter_str)?;
+
+            Ok(Page {
+                slug,
+                frontmatter,
+                content: markdown.to_string(),
+                rendered_html: None,
+            })
+        } else {
+            Ok(Page {
+                slug: slug.clone(),
+                frontmatter: PageFrontmatter {
+                    title: slug.replace('-', " "),
+                    description: None,
+                    draft: false,
+                },
+                content: content.to_string(),
+                rendered_html: None,
+            })
+        }
+    }
+
     fn split_frontmatter(content: &str) -> Result<(&str, &str)> {
         let parts: Vec<&str> = content.splitn(3, "---").collect();
 
@@ -34,6 +64,10 @@ impl Parser {
 
     fn parse_frontmatter(yaml: &str) -> Result<Frontmatter> {
         serde_yaml::from_str(yaml).context("Failed to parse frontmatter YAML")
+    }
+
+    fn parse_page_frontmatter(yaml: &str) -> Result<PageFrontmatter> {
+        serde_yaml::from_str(yaml).context("Failed to parse page frontmatter YAML")
     }
 
     fn path_to_slug(path: &Path) -> Result<String> {

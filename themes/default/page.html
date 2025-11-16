@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page.title }} - {{ config.site_title }}{% endblock %}
+
+{% block description %}{{ page.description | default(value="") }}{% endblock %}
+
+{% block meta %}
+    {{ super() }}
+    <meta property="og:title" content="{{ page.title }}">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ config.site_url }}/{{ slug }}">
+{% endblock %}
+
+{% block content %}
+<article class="page">
+    <header class="page-header">
+        <h1 class="page-title">{{ page.title }}</h1>
+    </header>
+
+    <div class="page-content">
+        {{ content | safe }}
+    </div>
+</article>
+{% endblock %}

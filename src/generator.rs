@@ -1,6 +1,6 @@
 use crate::config::SsgConfig;
 use crate::theme::ThemeEngine;
-use crate::types::Post;
+use crate::types::{Page, Post};
 use anyhow::Result;
 use serde::Serialize;
 use std::collections::HashMap;
@@ -71,6 +71,36 @@ impl Generator {
         Ok(output_path)
     }
 
+    pub fn generate_page(&self, page: &Page) -> Result<PathBuf> {
+        let html = page
+            .rendered_html
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("Page not rendered: {}", page.slug))?;
+
+        let template_config = TemplateConfig {
+            site_title: &self.config.site.title,
+            site_url: &self.config.site.url,
+            author: &self.config.site.author,
+        };
+
+        let mut context = TeraContext::new();
+        context.insert("page", &page.frontmatter);
+        context.insert("slug", &page.slug);
+        context.insert("content", html);
+        context.insert("config", &template_config);
+
+        context.insert("theme_variables", &self.theme_variables);
+        context.insert("theme_info", &self.theme_info);
+
+        let output = self.tera.render("page.html", &context)?;
+
+        let output_path = self.get_page_path(page);
+        fs::create_dir_all(output_path.parent().unwrap())?;
+        fs::write(&output_path, output)?;
+
+        Ok(output_path)
+    }
+
     pub fn get_tera(&self) -> &Tera {
         &self.tera
     }
@@ -79,6 +109,12 @@ impl Generator {
         PathBuf::from(&self.config.build.output_dir)
             .join(&post.frontmatter.category)
             .join(&post.slug)
+            .join("index.html")
+    }
+
+    fn get_page_path(&self, page: &Page) -> PathBuf {
+        PathBuf::from(&self.config.build.output_dir)
+            .join(&page.slug)
             .join("index.html")
     }
 

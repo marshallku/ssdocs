@@ -61,3 +61,20 @@ pub struct Category {
 fn default_category_index() -> i32 {
     999
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PageFrontmatter {
+    pub title: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(default)]
+    pub draft: bool,
+}
+
+#[derive(Debug, Clone)]
+pub struct Page {
+    pub slug: String,
+    pub frontmatter: PageFrontmatter,
+    pub content: String,
+    pub rendered_html: Option<String>,
+}

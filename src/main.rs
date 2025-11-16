@@ -180,6 +180,44 @@ fn build_all(use_cache: bool) -> Result<()> {
     }
     metadata.save()?;
 
+    let pages_dir = Path::new("content/pages");
+    if pages_dir.exists() {
+        println!("\n📄 Building pages...");
+        let mut pages_built = 0;
+
+        for entry in WalkDir::new(pages_dir)
+            .into_iter()
+            .filter_map(|e| e.ok())
+            .filter(|e| e.path().extension().map_or(false, |ext| ext == "md"))
+        {
+            let path = entry.path();
+            println!("🔨 Building page: {}", path.display());
+
+            let mut page = Parser::parse_page_file(path)?;
+
+            if page.frontmatter.draft {
+                println!("   ⚠  Draft - skipping output");
+                continue;
+            }
+
+            let html = renderer.render_markdown_with_components(
+                &page.content,
+                generator.get_tera(),
+                &page.slug,
+            )?;
+            page.rendered_html = Some(html);
+
+            let output_path = generator.generate_page(&page)?;
+            println!("   ✓ {}", output_path.display());
+
+            pages_built += 1;
+        }
+
+        if pages_built > 0 {
+            println!("✅ Built {} page(s)", pages_built);
+        }
+    }
+
     let index_generator = IndexGenerator::new(config.clone())?;
     index_generator.generate_all(&metadata)?;
 

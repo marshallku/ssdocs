@@ -359,7 +359,10 @@ fn watch_mode(port: u16) -> Result<()> {
 
     watcher.watch(Path::new("content"), RecursiveMode::Recursive)?;
     watcher.watch(Path::new("themes"), RecursiveMode::Recursive)?;
-    watcher.watch(Path::new("static"), RecursiveMode::Recursive)?;
+
+    if Path::new("static").exists() {
+        watcher.watch(Path::new("static"), RecursiveMode::Recursive)?;
+    }
 
     loop {
         match rx.recv_timeout(Duration::from_secs(1)) {

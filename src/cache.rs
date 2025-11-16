@@ -44,12 +44,14 @@ impl BuildCache {
         Ok(())
     }
 
-    pub fn needs_rebuild(&self, path: &Path, current_hash: &str) -> bool {
+    pub fn needs_rebuild(&self, path: &Path, current_hash: &str, current_template_hash: &str) -> bool {
         let path_str = path.to_string_lossy();
 
         match self.entries.get(path_str.as_ref()) {
             None => true,
-            Some(entry) => entry.file_hash != current_hash,
+            Some(entry) => {
+                entry.file_hash != current_hash || entry.template_hash != current_template_hash
+            }
         }
     }
 
@@ -86,6 +88,29 @@ pub fn hash_file(path: &Path) -> Result<String> {
     Ok(hash.to_hex().to_string())
 }
 
+pub fn hash_directory(dir: &Path) -> Result<String> {
+    use walkdir::WalkDir;
+
+    let mut hasher = blake3::Hasher::new();
+    let mut files: Vec<_> = WalkDir::new(dir)
+        .into_iter()
+        .filter_map(|e| e.ok())
+        .filter(|e| e.path().is_file())
+        .collect();
+
+    files.sort_by_key(|e| e.path().to_path_buf());
+
+    for entry in files {
+        let path = entry.path();
+        if let Ok(content) = fs::read(path) {
+            hasher.update(path.to_string_lossy().as_bytes());
+            hasher.update(&content);
+        }
+    }
+
+    Ok(hasher.finalize().to_hex().to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -109,7 +134,7 @@ mod tests {
         let cache = BuildCache::new();
         let path = Path::new("test.md");
 
-        assert!(cache.needs_rebuild(path, "abc123"));
+        assert!(cache.needs_rebuild(path, "abc123", "template_hash"));
     }
 
     #[test]
@@ -124,7 +149,8 @@ mod tests {
             "dist/test/index.html".to_string(),
         );
 
-        assert!(!cache.needs_rebuild(path, "abc123"));
-        assert!(cache.needs_rebuild(path, "different_hash"));
+        assert!(!cache.needs_rebuild(path, "abc123", "def456"));
+        assert!(cache.needs_rebuild(path, "different_hash", "def456"));
+        assert!(cache.needs_rebuild(path, "abc123", "different_template_hash"));
     }
 }

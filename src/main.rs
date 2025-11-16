@@ -15,7 +15,7 @@ use clap::{Parser as ClapParser, Subcommand};
 use std::path::Path;
 use walkdir::WalkDir;
 
-use crate::cache::{hash_file, BuildCache};
+use crate::cache::{hash_directory, hash_file, BuildCache};
 use crate::category::{discover_categories, validate_category};
 use crate::config::load_config;
 use crate::feeds::FeedGenerator;
@@ -116,6 +116,8 @@ fn build_all(use_cache: bool) -> Result<()> {
         );
     }
 
+    let template_hash = hash_directory(Path::new(&format!("themes/{}", config.theme.name)))?;
+
     let categories = discover_categories(posts_dir)?;
     if categories.is_empty() {
         eprintln!("⚠️  Warning: No categories found in content directory");
@@ -135,7 +137,7 @@ fn build_all(use_cache: bool) -> Result<()> {
         let path = entry.path();
         let file_hash = hash_file(path)?;
 
-        if use_cache && !cache.needs_rebuild(path, &file_hash) {
+        if use_cache && !cache.needs_rebuild(path, &file_hash, &template_hash) {
             println!("⏭  Skipping (unchanged): {}", path.display());
             skipped_count += 1;
             continue;
@@ -164,7 +166,7 @@ fn build_all(use_cache: bool) -> Result<()> {
         cache.update_entry(
             path,
             file_hash,
-            "template_hash_placeholder".to_string(),
+            template_hash.clone(),
             output_path.to_string_lossy().to_string(),
         );
 

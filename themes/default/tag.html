@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 
-{% block title %}Tag: {{ tag }} - {{ config.site_title }}{% endblock %}
+{% block title %}Tag: {{ tag | urldecode }} - {{ config.site_title }}{% endblock %}
 
 {% block content %}
 <div class="tag-page">
     <header class="page-header">
-        <h1>Posts tagged with "{{ tag }}"</h1>
+        <h1>Posts tagged with "{{ tag | urldecode }}"</h1>
         <p class="post-count">{{ post_count }} posts</p>
     </header>
 

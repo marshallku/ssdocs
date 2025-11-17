@@ -10,7 +10,7 @@
     <div class="tag-cloud">
         {% for tag_entry in tags %}
         <a href="/tag/{{ tag_entry.0 }}" class="tag-cloud-item">
-            <span class="tag-name">{{ tag_entry.0 }}</span>
+            <span class="tag-name">{{ tag_entry.0 | urldecode }}</span>
             <span class="tag-count">({{ tag_entry.1 }})</span>
         </a>
         {% endfor %}

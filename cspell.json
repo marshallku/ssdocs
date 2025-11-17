@@ -27,6 +27,7 @@
     "mytheme",
     "nextjs",
     "oneshot",
+    "peekable",
     "pkgconfig",
     "preconfigured",
     "preconfigures",
@@ -49,6 +50,7 @@
     "treeshake",
     "tsup",
     "Turborepo",
+    "urldecode",
     "urlencoding",
     "vercel",
     "wahlberg",
@@ -56,8 +58,13 @@
     "webdev",
     "WEBM",
     "WEBP",
-    "xlink",
-    "peekable"
+    "xlink"
   ],
-  "ignorePaths": ["Cargo.lock", "Cargo.toml", "target", "content", "examples"]
+  "ignorePaths": [
+    "Cargo.lock",
+    "Cargo.toml",
+    "target",
+    "content",
+    "examples"
+  ]
 }

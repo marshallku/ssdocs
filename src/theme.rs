@@ -3,9 +3,10 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
-use tera::Tera;
+use tera::{Tera, Value};
 
 use crate::config::SsgConfig;
+use crate::slug;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ThemeMetadata {
@@ -91,6 +92,8 @@ impl ThemeEngine {
         }
 
         validate_required_templates(&tera, &self.active_theme)?;
+
+        tera.register_filter("urldecode", urldecode_filter);
 
         Ok(tera)
     }
@@ -283,6 +286,12 @@ fn validate_required_templates(tera: &Tera, theme: &ThemeMetadata) -> Result<()>
     }
 
     Ok(())
+}
+
+fn urldecode_filter(value: &Value, _args: &HashMap<String, Value>) -> tera::Result<Value> {
+    let s = tera::try_get_value!("urldecode", "value", String, value);
+    let decoded = slug::decode_from_url(&s);
+    Ok(Value::String(decoded))
 }
 
 #[cfg(test)]

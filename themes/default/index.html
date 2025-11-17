@@ -38,7 +38,7 @@
             {% if post_meta.frontmatter.tags %}
             <div class="tags">
                 {% for tag in post_meta.frontmatter.tags %}
-                    <a href="/tag/{{ tag }}" class="tag">{{ tag }}</a>
+                    <a href="/tag/{{ tag }}" class="tag">{{ tag | urldecode }}</a>
                 {% endfor %}
             </div>
             {% endif %}

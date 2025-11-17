@@ -7,6 +7,7 @@ mod indices;
 mod metadata;
 mod parser;
 mod renderer;
+mod slug;
 mod theme;
 mod types;
 

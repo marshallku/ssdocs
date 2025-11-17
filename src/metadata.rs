@@ -54,7 +54,11 @@ impl MetadataCache {
     pub fn upsert_post(&mut self, slug: String, category: String, frontmatter: Frontmatter) {
         self.posts.retain(|p| p.slug != slug);
 
-        self.posts.push(PostMetadata { slug, category, frontmatter });
+        self.posts.push(PostMetadata {
+            slug,
+            category,
+            frontmatter,
+        });
 
         self.recalculate_stats();
     }
@@ -64,10 +68,7 @@ impl MetadataCache {
         self.tags.clear();
 
         for post in &self.posts {
-            *self
-                .categories
-                .entry(post.category.clone())
-                .or_insert(0) += 1;
+            *self.categories.entry(post.category.clone()).or_insert(0) += 1;
 
             for tag in &post.frontmatter.tags {
                 *self.tags.entry(tag.clone()).or_insert(0) += 1;

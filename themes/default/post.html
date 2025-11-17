@@ -8,7 +8,7 @@
     {{ super() }}
     <meta property="og:title" content="{{ post.frontmatter.title }}">
     <meta property="og:type" content="article">
-    <meta property="og:url" content="{{ config.site_url }}/{{ post.category }}/{{ slug }}">
+    <meta property="og:url" content="{{ config.site_url }}/{{ post.category }}/{{ post.slug }}">
     {% if post.frontmatter.featured_image %}
     <meta property="og:image" content="{{ config.site_url }}{{ post.frontmatter.featured_image }}">
     {% endif %}

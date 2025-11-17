@@ -3,6 +3,7 @@ use crate::metadata::MetadataCache;
 use crate::parser::Parser;
 use crate::renderer::Renderer;
 use anyhow::{Context, Result};
+use percent_encoding;
 use std::fs;
 use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
@@ -276,7 +277,11 @@ impl FeedGenerator {
     }
 
     fn find_post_file(content_dir: &Path, slug: &str) -> Result<PathBuf> {
-        let filename = format!("{}.md", slug);
+        // Decode the slug back to original filename for searching
+        let decoded = percent_encoding::percent_decode_str(slug)
+            .decode_utf8()
+            .unwrap_or_else(|_| std::borrow::Cow::Borrowed(slug));
+        let filename = format!("{}.md", decoded);
 
         for entry in WalkDir::new(content_dir)
             .follow_links(true)
@@ -288,7 +293,7 @@ impl FeedGenerator {
             }
         }
 
-        anyhow::bail!("Post file not found: {}", slug)
+        anyhow::bail!("Post file not found: {} (decoded: {})", slug, decoded)
     }
 
     fn escape_xml(s: &str) -> String {

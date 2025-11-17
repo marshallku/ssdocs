@@ -170,7 +170,11 @@ fn build_all(use_cache: bool) -> Result<()> {
             output_path.to_string_lossy().to_string(),
         );
 
-        metadata.upsert_post(post.slug.clone(), post.category.clone(), post.frontmatter.clone());
+        metadata.upsert_post(
+            post.slug.clone(),
+            post.category.clone(),
+            post.frontmatter.clone(),
+        );
 
         built_count += 1;
     }

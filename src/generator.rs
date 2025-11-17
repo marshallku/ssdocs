@@ -1,13 +1,17 @@
 use crate::config::SsgConfig;
 use crate::theme::ThemeEngine;
-use crate::types::{Page, Post, PostDate};
-use anyhow::Result;
-use chrono::{DateTime, Utc};
+use crate::types::{Page, Post};
+use anyhow::{Context, Result};
+use blake3;
+use percent_encoding::{utf8_percent_encode, AsciiSet, CONTROLS};
 use serde::Serialize;
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use tera::{Context as TeraContext, Tera};
+
+const FRAGMENT: &AsciiSet = &CONTROLS.add(b' ').add(b'"').add(b'<').add(b'>').add(b'`');
+const PATH: &AsciiSet = &FRAGMENT.add(b'#').add(b'?').add(b'{').add(b'}');
 
 /// Flattened config for template context (backward compatibility)
 #[derive(Debug, Clone, Serialize)]
@@ -15,22 +19,6 @@ struct TemplateConfig<'a> {
     site_title: &'a str,
     site_url: &'a str,
     author: &'a str,
-}
-
-/// Flattened post for template context
-#[derive(Debug, Clone, Serialize)]
-struct TemplatePost<'a> {
-    // From Post
-    slug: &'a str,
-    category: &'a str,
-
-    // From Frontmatter
-    title: &'a str,
-    date: &'a PostDate,
-    tags: &'a Vec<String>,
-    featured_image: &'a Option<String>,
-    description: &'a Option<String>,
-    draft: bool,
 }
 
 pub struct Generator {
@@ -190,13 +178,22 @@ impl Generator {
 
                 if is_image || is_media || is_document {
                     let relative_path = path.strip_prefix(content_dir)?;
-                    let full_output_path = output_dir.join(relative_path);
+                    let encoded_path = Self::encode_asset_path(relative_path);
+                    let full_output_path = output_dir.join(&encoded_path);
 
                     if let Some(parent) = full_output_path.parent() {
-                        fs::create_dir_all(parent)?;
+                        fs::create_dir_all(parent).with_context(|| {
+                            format!("Failed to create directory for: {}", encoded_path.display())
+                        })?;
                     }
 
-                    fs::copy(path, &full_output_path)?;
+                    fs::copy(path, &full_output_path).with_context(|| {
+                        format!(
+                            "Failed to copy {} to {}",
+                            path.display(),
+                            full_output_path.display()
+                        )
+                    })?;
                     copied_count += 1;
                 }
             }
@@ -207,6 +204,36 @@ impl Generator {
         }
 
         Ok(())
+    }
+
+    fn encode_asset_path(path: &Path) -> PathBuf {
+        let mut components = Vec::new();
+
+        for component in path.components() {
+            if let std::path::Component::Normal(os_str) = component {
+                if let Some(s) = os_str.to_str() {
+                    let encoded = utf8_percent_encode(s, PATH).to_string();
+
+                    // Limit individual component length (filesystem limit is usually 255)
+                    const MAX_COMPONENT_LEN: usize = 200;
+                    let limited = if encoded.len() > MAX_COMPONENT_LEN {
+                        let hash = blake3::hash(encoded.as_bytes());
+                        println!(
+                            "file name modified. Original: {}, Modified: {}",
+                            s,
+                            format!("{}-{}", &encoded[..180], &hash.to_hex()[..16])
+                        );
+                        format!("{}-{}", &encoded[..180], &hash.to_hex()[..16])
+                    } else {
+                        encoded
+                    };
+
+                    components.push(limited);
+                }
+            }
+        }
+
+        components.iter().collect()
     }
 
     fn copy_dir_all(src: &Path, dst: &Path) -> Result<()> {

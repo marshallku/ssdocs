@@ -1150,6 +1150,7 @@ dependencies = [
  "chrono",
  "clap",
  "notify",
+ "percent-encoding",
  "pulldown-cmark",
  "serde",
  "serde_json",

@@ -1,7 +1,14 @@
 use crate::types::{Frontmatter, Page, PageFrontmatter, Post};
 use anyhow::{Context, Result};
+use blake3;
+use percent_encoding::{utf8_percent_encode, AsciiSet, CONTROLS};
 use std::fs;
 use std::path::Path;
+
+// Define characters that should NOT be percent-encoded
+// https://url.spec.whatwg.org/#path-percent-encode-set
+const FRAGMENT: &AsciiSet = &CONTROLS.add(b' ').add(b'"').add(b'<').add(b'>').add(b'`');
+const PATH: &AsciiSet = &FRAGMENT.add(b'#').add(b'?').add(b'{').add(b'}');
 
 pub struct Parser;
 
@@ -12,7 +19,8 @@ impl Parser {
 
         let (frontmatter_str, markdown) = Self::split_frontmatter(&content)?;
         let frontmatter = Self::parse_frontmatter(frontmatter_str)?;
-        let slug = Self::path_to_slug(path)?;
+        let raw_slug = Self::path_to_slug(path)?;
+        let slug = Self::encode_slug(&raw_slug);
         let category = Self::extract_category(path)?;
 
         Ok(Post {
@@ -24,6 +32,22 @@ impl Parser {
         })
     }
 
+    fn encode_slug(slug: &str) -> String {
+        // Percent-encode non-ASCII characters for filesystem paths and URLs
+        // This keeps ASCII letters, numbers, hyphens, underscores, and dots as-is
+        let encoded = utf8_percent_encode(slug, PATH).to_string();
+
+        // Filesystem limit is usually 255 bytes, keep some margin
+        const MAX_LEN: usize = 200;
+        if encoded.len() > MAX_LEN {
+            // If too long, take first 180 chars + hash of full string for uniqueness
+            let hash = blake3::hash(encoded.as_bytes());
+            format!("{}-{}", &encoded[..180], &hash.to_hex()[..16])
+        } else {
+            encoded
+        }
+    }
+
     fn extract_category(path: &Path) -> Result<String> {
         let components: Vec<_> = path.components().collect();
 
@@ -31,10 +55,9 @@ impl Parser {
             if let std::path::Component::Normal(comp) = components[i] {
                 if comp == "posts" && i + 1 < components.len() {
                     if let std::path::Component::Normal(category) = components[i + 1] {
-                        return category
-                            .to_str()
-                            .map(|s| s.to_string())
-                            .ok_or_else(|| anyhow::anyhow!("Invalid category name in path: {}", path.display()));
+                        return category.to_str().map(|s| s.to_string()).ok_or_else(|| {
+                            anyhow::anyhow!("Invalid category name in path: {}", path.display())
+                        });
                     }
                 }
             }

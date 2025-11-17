@@ -1,0 +1,25 @@
+# Build artifacts
+target/
+.build-cache/
+
+# Source code (not needed for serving static files)
+src/
+content/
+themes/
+static/
+
+# Development files
+.git/
+.gitignore
+*.md
+Cargo.toml
+Cargo.lock
+
+# IDE
+.vscode/
+.idea/
+
+# Temporary files
+*.swp
+*.swo
+*~

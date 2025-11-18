@@ -22,6 +22,10 @@ struct PaginationContext {
     next_url: Option<String>,
     first_url: String,
     last_url: String,
+    /// Jump to page before current window (e.g., window [6,7,8,9,10] -> jump to 5)
+    jump_prev_url: Option<String>,
+    /// Jump to page after current window (e.g., window [1,2,3,4,5] -> jump to 6)
+    jump_next_url: Option<String>,
     pages: Vec<PageLink>,
 }
 
@@ -315,9 +319,6 @@ impl IndexGenerator {
             (total_posts + posts_per_page - 1) / posts_per_page
         };
 
-        let has_prev = current_page > 1;
-        let has_next = current_page < total_pages;
-
         let first_url = base_url.to_string();
         let last_url = if total_pages == 1 {
             base_url.to_string()
@@ -325,23 +326,23 @@ impl IndexGenerator {
             format!("{}page/{}", base_url, total_pages)
         };
 
-        let prev_url = if has_prev {
-            Some(if current_page == 2 {
-                base_url.to_string()
-            } else {
-                format!("{}page/{}", base_url, current_page - 1)
-            })
+        let window = self.config.build.pagination_window;
+        let half_window = window / 2;
+
+        let (start_page, end_page) = if total_pages <= window {
+            (1, total_pages)
+        } else if current_page <= half_window + 1 {
+            // Near start
+            (1, window)
+        } else if current_page >= total_pages - half_window {
+            // Near end
+            (total_pages - window + 1, total_pages)
         } else {
-            None
+            // Middle
+            (current_page - half_window, current_page + half_window)
         };
 
-        let next_url = if has_next {
-            Some(format!("{}page/{}", base_url, current_page + 1))
-        } else {
-            None
-        };
-
-        let pages = (1..=total_pages)
+        let pages = (start_page..=end_page)
             .map(|num| PageLink {
                 number: num,
                 url: if num == 1 {
@@ -352,6 +353,29 @@ impl IndexGenerator {
                 is_current: num == current_page,
             })
             .collect();
+
+        // Jump URLs: go to page outside current window
+        let jump_prev_url = if start_page > 1 {
+            let jump_page = start_page - 1;
+            Some(if jump_page == 1 {
+                base_url.to_string()
+            } else {
+                format!("{}page/{}", base_url, jump_page)
+            })
+        } else {
+            None
+        };
+
+        let jump_next_url = if end_page < total_pages {
+            Some(format!("{}page/{}", base_url, end_page + 1))
+        } else {
+            None
+        };
+
+        let prev_url = jump_prev_url.clone();
+        let next_url = jump_next_url.clone();
+        let has_prev = prev_url.is_some();
+        let has_next = next_url.is_some();
 
         PaginationContext {
             current_page,
@@ -364,6 +388,8 @@ impl IndexGenerator {
             next_url,
             first_url,
             last_url,
+            jump_prev_url,
+            jump_next_url,
             pages,
         }
     }

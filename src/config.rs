@@ -37,6 +37,10 @@ pub struct BuildConfig {
     pub output_dir: String,
     #[serde(default = "default_posts_per_page")]
     pub posts_per_page: usize,
+    /// Maximum number of page links to show in pagination (default: 5)
+    /// Shows prev N/2, current, next N/2 pages
+    #[serde(default = "default_pagination_window")]
+    pub pagination_window: usize,
     /// Percent-encode filenames for URL safety (default: false)
     /// Set to true for compatibility with older web servers
     #[serde(default)]
@@ -81,6 +85,7 @@ impl Default for BuildConfig {
             content_dir: default_content_dir(),
             output_dir: default_output_dir(),
             posts_per_page: default_posts_per_page(),
+            pagination_window: default_pagination_window(),
             encode_filenames: false,
         }
     }
@@ -126,6 +131,10 @@ fn default_output_dir() -> String {
 
 fn default_posts_per_page() -> usize {
     10
+}
+
+fn default_pagination_window() -> usize {
+    5
 }
 
 pub fn load_config() -> Result<SsgConfig> {

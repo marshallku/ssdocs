@@ -6,6 +6,8 @@ mod generator;
 mod indices;
 mod metadata;
 mod parser;
+mod plugin;
+mod plugins;
 mod renderer;
 mod slug;
 mod theme;
@@ -24,6 +26,8 @@ use crate::generator::Generator;
 use crate::indices::IndexGenerator;
 use crate::metadata::MetadataCache;
 use crate::parser::Parser;
+use crate::plugin::{PluginContext, PluginManager};
+use crate::plugins::RelatedPostsPlugin;
 use crate::renderer::Renderer;
 
 #[derive(ClapParser)]
@@ -107,6 +111,16 @@ fn build_all(use_cache: bool) -> Result<()> {
         MetadataCache::new()
     };
 
+    // Initialize plugin system
+    let mut plugin_manager = PluginManager::new();
+    plugin_manager.register(Box::new(RelatedPostsPlugin::new()));
+    plugin_manager.init_all(&config)?;
+
+    println!(
+        "🔌 Loaded plugins: {}",
+        plugin_manager.list_plugins().join(", ")
+    );
+
     let posts_dir = Path::new(&config.build.content_dir);
 
     if !posts_dir.exists() {
@@ -154,15 +168,31 @@ fn build_all(use_cache: bool) -> Result<()> {
             continue;
         }
 
+        // Create plugin context
+        let plugin_ctx = PluginContext {
+            config: &config,
+            metadata: &metadata,
+        };
+
+        // Plugin hook: after parsing
+        plugin_manager.on_post_parsed(&mut post, &plugin_ctx)?;
+
         let base_path = format!("{}", post.category);
-        let html = renderer.render_markdown_with_components(
+        let mut html = renderer.render_markdown_with_components(
             &post.content,
             generator.get_tera(),
             &base_path,
         )?;
+
+        // Plugin hook: after rendering
+        plugin_manager.on_post_rendered(&mut post, &mut html, &plugin_ctx)?;
+
         post.rendered_html = Some(html);
 
-        let output_path = generator.generate_post(&post)?;
+        // Collect plugin template data
+        let plugin_data = plugin_manager.template_context_post(&post, &plugin_ctx)?;
+
+        let output_path = generator.generate_post(&post, &plugin_data)?;
 
         cache.update_entry(
             path,
@@ -212,7 +242,14 @@ fn build_all(use_cache: bool) -> Result<()> {
             )?;
             page.rendered_html = Some(html);
 
-            let output_path = generator.generate_page(&page)?;
+            // Collect plugin template data for pages
+            let plugin_ctx = PluginContext {
+                config: &config,
+                metadata: &metadata,
+            };
+            let plugin_data = plugin_manager.template_context_page(&page, &plugin_ctx)?;
+
+            let output_path = generator.generate_page(&page, &plugin_data)?;
             println!("   ✓ {}", output_path.display());
 
             pages_built += 1;
@@ -258,7 +295,13 @@ fn build_single_post(post_path: &str) -> Result<()> {
 
     let config = load_config()?;
     let renderer = Renderer::new();
-    let generator = Generator::new(config)?;
+    let generator = Generator::new(config.clone())?;
+    let metadata = MetadataCache::load().unwrap_or_else(|_| MetadataCache::new());
+
+    // Initialize plugin system
+    let mut plugin_manager = PluginManager::new();
+    plugin_manager.register(Box::new(RelatedPostsPlugin::new()));
+    plugin_manager.init_all(&config)?;
 
     let path = Path::new(post_path);
 
@@ -272,15 +315,31 @@ fn build_single_post(post_path: &str) -> Result<()> {
         println!("⚠  This is a draft post");
     }
 
+    // Create plugin context
+    let plugin_ctx = PluginContext {
+        config: &config,
+        metadata: &metadata,
+    };
+
+    // Plugin hook: after parsing
+    plugin_manager.on_post_parsed(&mut post, &plugin_ctx)?;
+
     let base_path = format!("{}", post.category);
-    let html = renderer.render_markdown_with_components(
+    let mut html = renderer.render_markdown_with_components(
         &post.content,
         generator.get_tera(),
         &base_path,
     )?;
+
+    // Plugin hook: after rendering
+    plugin_manager.on_post_rendered(&mut post, &mut html, &plugin_ctx)?;
+
     post.rendered_html = Some(html);
 
-    let output_path = generator.generate_post(&post)?;
+    // Collect plugin template data
+    let plugin_data = plugin_manager.template_context_post(&post, &plugin_ctx)?;
+
+    let output_path = generator.generate_post(&post, &plugin_data)?;
 
     println!("\n✅ Built: {}", output_path.display());
 

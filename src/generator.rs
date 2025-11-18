@@ -4,6 +4,7 @@ use crate::theme::ThemeEngine;
 use crate::types::{Page, Post};
 use anyhow::{Context, Result};
 use serde::Serialize;
+use serde_json::Value as JsonValue;
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -41,7 +42,11 @@ impl Generator {
         })
     }
 
-    pub fn generate_post(&self, post: &Post) -> Result<PathBuf> {
+    pub fn generate_post(
+        &self,
+        post: &Post,
+        plugin_data: &HashMap<String, JsonValue>,
+    ) -> Result<PathBuf> {
         let html = post
             .rendered_html
             .as_ref()
@@ -64,6 +69,11 @@ impl Generator {
         context.insert("theme_variables", &self.theme_variables);
         context.insert("theme_info", &self.theme_info);
 
+        // Add plugin data to context
+        for (key, value) in plugin_data {
+            context.insert(key, value);
+        }
+
         let output = self.tera.render("post.html", &context)?;
 
         let output_path = self.get_post_path(post);
@@ -73,7 +83,11 @@ impl Generator {
         Ok(output_path)
     }
 
-    pub fn generate_page(&self, page: &Page) -> Result<PathBuf> {
+    pub fn generate_page(
+        &self,
+        page: &Page,
+        plugin_data: &HashMap<String, JsonValue>,
+    ) -> Result<PathBuf> {
         let html = page
             .rendered_html
             .as_ref()
@@ -93,6 +107,10 @@ impl Generator {
 
         context.insert("theme_variables", &self.theme_variables);
         context.insert("theme_info", &self.theme_info);
+
+        for (key, value) in plugin_data {
+            context.insert(key, value);
+        }
 
         let output = self.tera.render("page.html", &context)?;
 

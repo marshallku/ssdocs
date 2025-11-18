@@ -28,6 +28,26 @@ pub struct ThemeConfig {
     pub variables: HashMap<String, serde_yaml::Value>,
 }
 
+/// Search configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SearchConfig {
+    /// Enable search index generation (default: true)
+    #[serde(default = "default_search_enabled")]
+    pub enabled: bool,
+}
+
+impl Default for SearchConfig {
+    fn default() -> Self {
+        Self {
+            enabled: default_search_enabled(),
+        }
+    }
+}
+
+fn default_search_enabled() -> bool {
+    true
+}
+
 /// Build configuration from config.yaml
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BuildConfig {
@@ -45,6 +65,9 @@ pub struct BuildConfig {
     /// Set to true for compatibility with older web servers
     #[serde(default)]
     pub encode_filenames: bool,
+    /// Search index configuration
+    #[serde(default)]
+    pub search: SearchConfig,
 }
 
 /// Complete config.yaml structure
@@ -87,6 +110,7 @@ impl Default for BuildConfig {
             posts_per_page: default_posts_per_page(),
             pagination_window: default_pagination_window(),
             encode_filenames: false,
+            search: SearchConfig::default(),
         }
     }
 }

@@ -9,6 +9,7 @@ mod parser;
 mod plugin;
 mod plugins;
 mod renderer;
+mod search;
 mod shortcodes;
 mod slug;
 mod theme;
@@ -30,6 +31,7 @@ use crate::parser::Parser;
 use crate::plugin::{PluginContext, PluginManager};
 use crate::plugins::RelatedPostsPlugin;
 use crate::renderer::Renderer;
+use crate::search::SearchIndexGenerator;
 use crate::shortcodes::ShortcodeRegistry;
 
 #[derive(ClapParser)]
@@ -282,6 +284,11 @@ fn build_all(use_cache: bool) -> Result<()> {
         posts_dir,
         Path::new(&config.build.output_dir),
     )?;
+
+    if config.build.search.enabled {
+        let search_generator = SearchIndexGenerator::new(config.clone());
+        search_generator.generate(&metadata)?;
+    }
 
     println!("🎨 Generating syntax highlighting CSS...");
     let css_dir = Path::new(&config.build.output_dir).join("css");

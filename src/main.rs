@@ -234,6 +234,11 @@ fn build_all(use_cache: bool) -> Result<()> {
         Path::new(&config.build.output_dir),
     )?;
 
+    println!("🎨 Generating syntax highlighting CSS...");
+    let css_dir = Path::new(&config.build.output_dir).join("css");
+    std::fs::create_dir_all(&css_dir)?;
+    renderer.write_syntax_css(css_dir.join("syntax.css"))?;
+
     generator.copy_content_assets()?;
     generator.copy_static_assets()?;
 

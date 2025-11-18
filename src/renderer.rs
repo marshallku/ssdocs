@@ -1,9 +1,12 @@
 use anyhow::Result;
 use pulldown_cmark::{html, Options, Parser as MdParser};
 use std::collections::HashMap;
+use std::fs;
+use std::path::Path;
 use syntect::highlighting::{Theme, ThemeSet};
-use syntect::html::highlighted_html_for_string;
+use syntect::html::{css_for_theme_with_class_style, ClassStyle, ClassedHTMLGenerator};
 use syntect::parsing::SyntaxSet;
+use syntect::util::LinesWithEndings;
 use tera::{Context, Tera};
 
 pub struct Renderer {
@@ -434,18 +437,92 @@ impl Renderer {
             .find_syntax_by_token(lang)
             .unwrap_or_else(|| self.syntax_set.find_syntax_plain_text());
 
-        let theme = self.get_theme();
+        // Use ClassedHTMLGenerator for CSS class-based highlighting
+        let mut html_generator =
+            ClassedHTMLGenerator::new_with_class_style(syntax, &self.syntax_set, ClassStyle::Spaced);
 
-        Ok(highlighted_html_for_string(
-            code,
-            &self.syntax_set,
-            syntax,
-            theme,
-        )?)
+        for line in LinesWithEndings::from(code) {
+            html_generator.parse_html_for_line_which_includes_newline(line)?;
+        }
+
+        Ok(format!("<pre class=\"syntax-highlight\"><code>{}</code></pre>",
+            html_generator.finalize()))
     }
 
-    fn get_theme(&self) -> &Theme {
-        &self.theme_set.themes["base16-ocean.dark"]
+    /// Generate CSS for syntax highlighting themes
+    pub fn generate_theme_css(&self) -> Result<String> {
+        let mut css = String::new();
+
+        // CSS Variables for theming
+        css.push_str(":root {\n");
+        css.push_str("  color-scheme: light dark;\n");
+        css.push_str("}\n\n");
+
+        // Light theme (default)
+        css.push_str("/* Light theme */\n");
+        css.push_str("@media (prefers-color-scheme: light) {\n");
+        css.push_str("  :root {\n");
+        let light_theme = &self.theme_set.themes["Solarized (light)"];
+        Self::add_theme_variables(&mut css, light_theme, "    ");
+        css.push_str("  }\n");
+        css.push_str("}\n\n");
+
+        // Dark theme
+        css.push_str("/* Dark theme */\n");
+        css.push_str("@media (prefers-color-scheme: dark) {\n");
+        css.push_str("  :root {\n");
+        let dark_theme = &self.theme_set.themes["base16-ocean.dark"];
+        Self::add_theme_variables(&mut css, dark_theme, "    ");
+        css.push_str("  }\n");
+        css.push_str("}\n\n");
+
+        // Generate base CSS for syntax classes using dark theme as reference
+        let dark_theme = &self.theme_set.themes["base16-ocean.dark"];
+        let theme_css = css_for_theme_with_class_style(dark_theme, ClassStyle::Spaced)?;
+
+        // Convert to CSS variables
+        css.push_str(&Self::convert_css_to_variables(&theme_css));
+
+        // Add base styles
+        css.push_str("\n.syntax-highlight {\n");
+        css.push_str("  background-color: var(--syntax-bg);\n");
+        css.push_str("  color: var(--syntax-fg);\n");
+        css.push_str("  padding: 1em;\n");
+        css.push_str("  overflow-x: auto;\n");
+        css.push_str("  border-radius: 4px;\n");
+        css.push_str("}\n\n");
+        css.push_str(".syntax-highlight code {\n");
+        css.push_str("  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;\n");
+        css.push_str("  font-size: 0.9em;\n");
+        css.push_str("  line-height: 1.5;\n");
+        css.push_str("}\n");
+
+        Ok(css)
+    }
+
+    fn add_theme_variables(css: &mut String, theme: &Theme, indent: &str) {
+        css.push_str(&format!("{}--syntax-bg: {};\n", indent,
+            Self::color_to_css(&theme.settings.background.unwrap_or(syntect::highlighting::Color::WHITE))));
+        css.push_str(&format!("{}--syntax-fg: {};\n", indent,
+            Self::color_to_css(&theme.settings.foreground.unwrap_or(syntect::highlighting::Color::BLACK))));
+    }
+
+    fn color_to_css(color: &syntect::highlighting::Color) -> String {
+        format!("#{:02x}{:02x}{:02x}", color.r, color.g, color.b)
+    }
+
+    fn convert_css_to_variables(css: &str) -> String {
+        // Replace hardcoded colors with CSS variables in the generated CSS
+        // This is a simplified version - we'll use the variables defined above
+        css.replace("background-color:#", "background-color: var(--syntax-bg); /* #")
+            .replace("color:#", "color: var(--syntax-fg); /* #")
+    }
+
+    /// Write syntax highlighting CSS to file
+    pub fn write_syntax_css<P: AsRef<Path>>(&self, output_path: P) -> Result<()> {
+        let css = self.generate_theme_css()?;
+        fs::write(output_path, css)?;
+        Ok(())
     }
 }
 

@@ -6,12 +6,71 @@
 
 {% block meta %}
     {{ super() }}
+
+    <link rel="canonical" href="{{ config.site_url }}/{{ post.category }}/{{ post.slug }}/">
+
     <meta property="og:title" content="{{ post.frontmatter.title }}">
     <meta property="og:type" content="article">
-    <meta property="og:url" content="{{ config.site_url }}/{{ post.category }}/{{ post.slug }}">
+    <meta property="og:url" content="{{ config.site_url }}/{{ post.category }}/{{ post.slug }}/">
+    <meta property="og:site_name" content="{{ config.site_title }}">
+    {% if post.frontmatter.description %}
+    <meta property="og:description" content="{{ post.frontmatter.description }}">
+    {% endif %}
     {% if post.frontmatter.featured_image %}
     <meta property="og:image" content="{{ config.site_url }}{{ post.frontmatter.featured_image }}">
     {% endif %}
+    <meta property="article:published_time" content="{{ post.frontmatter.date.posted }}">
+    {% if post.frontmatter.date.modified %}
+    <meta property="article:modified_time" content="{{ post.frontmatter.date.modified }}">
+    {% endif %}
+    <meta property="article:author" content="{{ config.author }}">
+    <meta property="article:section" content="{{ post.category }}">
+    {% for tag in post.frontmatter.tags %}
+    <meta property="article:tag" content="{{ tag }}">
+    {% endfor %}
+
+    <meta name="twitter:card" content="{% if post.frontmatter.featured_image %}summary_large_image{% else %}summary{% endif %}">
+    <meta name="twitter:title" content="{{ post.frontmatter.title }}">
+    {% if post.frontmatter.description %}
+    <meta name="twitter:description" content="{{ post.frontmatter.description }}">
+    {% endif %}
+    {% if post.frontmatter.featured_image %}
+    <meta name="twitter:image" content="{{ config.site_url }}{{ post.frontmatter.featured_image }}">
+    {% endif %}
+
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": "{{ post.frontmatter.title }}",
+        "url": "{{ config.site_url }}/{{ post.category }}/{{ post.slug }}/",
+        "datePublished": "{{ post.frontmatter.date.posted }}",
+        {% if post.frontmatter.date.modified %}
+        "dateModified": "{{ post.frontmatter.date.modified }}",
+        {% else %}
+        "dateModified": "{{ post.frontmatter.date.posted }}",
+        {% endif %}
+        {% if post.frontmatter.description %}
+        "description": "{{ post.frontmatter.description }}",
+        {% endif %}
+        {% if post.frontmatter.featured_image %}
+        "image": "{{ config.site_url }}{{ post.frontmatter.featured_image }}",
+        {% endif %}
+        "author": {
+            "@type": "Person",
+            "name": "{{ config.author }}"
+        },
+        "publisher": {
+            "@type": "Organization",
+            "name": "{{ config.site_title }}",
+            "url": "{{ config.site_url }}"
+        },
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "{{ config.site_url }}/{{ post.category }}/{{ post.slug }}/"
+        }
+    }
+    </script>
 {% endblock %}
 
 {% block content %}
